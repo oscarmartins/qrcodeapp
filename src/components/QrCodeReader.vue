@@ -1,13 +1,20 @@
 <template>
   <div class="hello">
     <div class="center">
-      <h4>
+      <h4 class="card-title">
         {{this.cardTitle}}
       </h4>
       <div class="preview-container">
         <video id="preview"></video>
       </div>
-       <mt-cell title="Voltar" :to="{name: 'home'}" is-link></mt-cell>
+      <mt-radio
+        title="Cameras"
+        :value.sync="this.$store.state.activeCamera"
+        :options="this.camerasOptions"
+        @change="selectCamera"
+      >
+      </mt-radio>
+      <mt-cell title="Voltar" :to="{name: 'home'}" is-link></mt-cell>
     </div>
   </div>
 </template>
@@ -19,7 +26,6 @@ export default {
   name: 'QrCodeRader',
   data () {
     const {state} = this.$route.params
-    debugger
     let cardTitle = 'Ler Qrcode '
     if (Number(state) === 100) {
       cardTitle = 'Iniciar Sessão'
@@ -29,9 +35,10 @@ export default {
     return {
       msg: '',
       scanner: null,
-      activeCameraId: null,
+      activeCameraId: '',
       cameras: [],
       scans: [],
+      camerasOptions: [],
       cardTitle: cardTitle,
       appState: Number(state)
     }
@@ -45,7 +52,8 @@ export default {
     }
     $this.scanner = new Instascan.Scanner({
       video: document.getElementById('preview'),
-      scanPeriod: 5
+      scanPeriod: 10,
+      mirror: false
     })
     $this.scanner.addListener('scan', function (qrcodestr) {
       $this.scans.unshift({ date: +Date.now(), qrcodestr: qrcodestr })
@@ -60,7 +68,7 @@ export default {
         } else {
           Toast({
             message: 'Qrcode Inválido!!',
-            position: 'top',
+            position: 'bottom',
             duration: 3000
           })
         }
@@ -68,7 +76,7 @@ export default {
         const result = `qrcode value: ${qrcodestr}`
         Toast({
           message: result,
-          position: 'top',
+          position: 'bottom',
           duration: 5000
         })
         $this.$store.commit('addProduct', qrcodestr)
@@ -84,24 +92,47 @@ export default {
     Instascan.Camera.getCameras()
       .then(function (cameras) {
         $this.cameras = cameras
+        $this.camerasOptions = cameras.map(cam => {
+          return {
+            label: cam.name,
+            value: cam.id,
+            disabled: false
+          }
+        })
         if (cameras.length > 0) {
-          $this.activeCameraId = cameras[0].id
-          $this.scanner.start(cameras[0])
+          const camera = cameras[cameras.length - 1]
+          $this.selectCamera(camera.id)
+          /*  $this.scanner.start(cameras[cameras.length - 1])  */
         } else {
           console.error('No cameras found.')
+          Toast({
+            message: 'Camera not found.',
+            position: 'top',
+            duration: 5000
+          })
         }
       })
       .catch(function (e) {
         console.error(e)
+        Toast({
+          message: e,
+          position: 'top',
+          duration: 5000
+        })
       })
   },
   methods: {
     formatName: function (name) {
       return name || '(unknown)'
     },
-    selectCamera: function (camera) {
-      this.activeCameraId = camera.id
-      this.scanner.start(camera)
+    selectCamera: function (cameraId) {
+      this.activeCameraId = cameraId
+      const camera = this.cameras.find(c => c.id === cameraId)
+      this.$store.commit('turnCameraOn', camera)
+      setTimeout(function (vue) {
+        vue.scanner.start(camera)
+      }, 100, this)
+      return true
     }
   },
   beforeDestroy () {
@@ -131,5 +162,10 @@ export default {
     height: 100%;
     min-width: 50%;
     min-height: 1rem;
+    border: .3rem solid #00ea07;
+    box-sizing: border-box;
+  }
+  h4.card-title {
+    padding: 0 1rem;
   }
 </style>

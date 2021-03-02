@@ -46,8 +46,11 @@ const store = new Vuex.Store({
   state: {
     count: 0,
     header: 'WINPEGASUS APP QR CODE',
+    activeCamera: '',
     user: {},
-    product: {}
+    flagProductView: false,
+    product: {},
+    products: []
   },
   mutations: {
     changeHeader (state, header) {
@@ -65,14 +68,33 @@ const store = new Vuex.Store({
       */
       state.user = user
     },
+    setFlagProductView (state, flagProductView) {
+      state.flagProductView = flagProductView
+    },
+    removeProduct (state, uii) {
+      state.products = state.products.filter(p => p.uui !== uii)
+    },
     addProduct (state, product) {
       /* id name lote price armazem */
-      const protmp = {}
-      product.split('\n').forEach(p => {
-        const it = p.split('=')
-        protmp[it[0]] = it[1]
-      })
+      const uui = Date.now()
+      const protmp = {
+        uui: uui
+      }
+      if (typeof product === 'string') {
+        product.split('\n').forEach(p => {
+          const it = p.split('=')
+          protmp[it[0]] = it[1]
+        })
+      } else {
+        Object.assign(protmp, product)
+      }
       state.product = protmp
+      if (!state.products.find(p => p.uii === protmp.uui)) {
+        state.products.push(protmp)
+      }
+    },
+    turnCameraOn (state, camera) {
+      state.activeCamera = camera.id
     }
   },
   getters: {

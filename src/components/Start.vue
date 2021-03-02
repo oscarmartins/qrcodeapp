@@ -1,6 +1,6 @@
 <template>
 <div class="hello">
-  <h2>Bem vindo, {{this.$store.state.user.name}}</h2>
+  <h3 class="welcome-title">Bem vindo, {{this.$store.state.user.name}}</h3>
   <mt-cell title="Ler Produto" :to="{name: 'reader', params: {state: 200}}" is-link></mt-cell>
   <mt-cell title="Histórico Produtos" :to="{name: 'products'}" is-link></mt-cell>
   <mt-cell title="Meus Dados" :to="{name: 'profile'}" is-link></mt-cell>
@@ -12,16 +12,9 @@
 import { MessageBox } from 'mint-ui'
 export default {
   name: 'Start',
-  data () {
-    return {
-
-    }
-  },
   beforeMount () {
     const user = this.$store.getters.isUserValid
-    if (user) {
-      debugger
-    } else {
+    if (!user) {
       this.$router.push({name: 'reader', params: {state: 100}})
     }
   },
@@ -41,10 +34,11 @@ export default {
       })
     }
   }
-
 }
 </script>
 
 <style>
-
+  h3.welcome-title {
+    text-align: center;
+  }
 </style>
