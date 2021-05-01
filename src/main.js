@@ -49,7 +49,7 @@ const store = new Vuex.Store({
     activeCamera: '',
     user: {},
     flagProductView: false,
-    product: {},
+    lastProduct: {},
     products: []
   },
   mutations: {
@@ -71,27 +71,28 @@ const store = new Vuex.Store({
     setFlagProductView (state, flagProductView) {
       state.flagProductView = flagProductView
     },
-    removeProduct (state, uii) {
-      state.products = state.products.filter(p => p.uui !== uii)
+    removeProduct (state, pid) {
+      state.products = state.products.filter(p => p.pid !== pid)
     },
-    addProduct (state, product) {
+    renderProduct (state, strProduct) {
       /* id name lote price armazem */
-      const uui = Date.now()
-      const protmp = {
-        uui: uui
+      const pid = Date.now()
+      const newProduct = {
+        pid: pid
       }
-      if (typeof product === 'string') {
-        product.split('\n').forEach(p => {
+      if (typeof strProduct === 'string') {
+        strProduct.split('\n').forEach(p => {
           const it = p.split('=')
-          protmp[it[0]] = it[1]
+          newProduct[it[0]] = it[1]
         })
       } else {
-        Object.assign(protmp, product)
+        Object.assign(newProduct, strProduct)
       }
-      state.product = protmp
-      if (!state.products.find(p => p.uii === protmp.uui)) {
-        state.products.push(protmp)
-      }
+      state.lastProduct = newProduct
+    },
+    storeProduct (state, product) {
+      state.removeProduct(state, product.pid)
+      state.products.push(product)
     },
     turnCameraOn (state, camera) {
       state.activeCamera = camera.id
@@ -100,6 +101,9 @@ const store = new Vuex.Store({
   getters: {
     isUserValid: state => {
       return Object.keys(state.user).indexOf('key') >= 0
+    },
+    getProductById: (state) => (pid) => {
+      return state.products.find(p => p.pid === pid)
     }
   }
 })

@@ -45,52 +45,58 @@ export default {
   },
   mounted: function () {
     var $this = this
-    const args = { video: document.getElementById('preview') }
+    const args = {
+      video: document.getElementById('preview'),
+      scanPeriod: 10,
+      mirror: false
+    }
     window.URL.createObjectURL = (stream) => {
       args.video.srcObject = stream
       return stream
     }
-    $this.scanner = new Instascan.Scanner({
-      video: document.getElementById('preview'),
-      scanPeriod: 10,
-      mirror: false
-    })
-    $this.scanner.addListener('scan', function (qrcodestr) {
-      $this.scans.unshift({ date: +Date.now(), qrcodestr: qrcodestr })
-      if ($this.appState === 100) {
-        const qrcodeval = $this.validateQrCode(qrcodestr, 100)
-        if (qrcodeval) {
-          console.log(qrcodestr)
-          $this.$store.commit('addUser', qrcodeval)
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+      $this.scanner = new Instascan.Scanner(args)
+      $this.scanner.addListener('scan', function (qrcodestr) {
+        $this.scans.unshift({ date: +Date.now(), qrcodestr: qrcodestr })
+        if ($this.appState === 100) {
+          const qrcodeval = $this.validateQrCode(qrcodestr, 100)
+          if (qrcodeval) {
+            console.log(qrcodestr)
+            $this.$store.commit('addUser', qrcodeval)
+            $this.$router.push({
+              name: 'start'
+            })
+          } else {
+            Toast({
+              message: 'Qrcode Inválido!!',
+              position: 'bottom',
+              duration: 3000
+            })
+          }
+        } else if ($this.appState === 200) {
+          const result = `qrcode value: ${qrcodestr}`
+          Toast({
+            message: result,
+            position: 'bottom',
+            duration: 5000
+          })
+          $this.$store.commit('renderProduct', qrcodestr)
           $this.$router.push({
-            name: 'start'
+            name: 'product',
+            params: {
+              pid: -1,
+              product: $this.$store.state.lastProduct
+            }
           })
         } else {
           Toast({
-            message: 'Qrcode Inválido!!',
+            message: qrcodestr,
             position: 'bottom',
-            duration: 3000
+            duration: 5000
           })
         }
-      } else if ($this.appState === 200) {
-        const result = `qrcode value: ${qrcodestr}`
-        Toast({
-          message: result,
-          position: 'bottom',
-          duration: 5000
-        })
-        $this.$store.commit('addProduct', qrcodestr)
-        $this.$router.push({name: 'product'})
-      } else {
-        Toast({
-          message: qrcodestr,
-          position: 'bottom',
-          duration: 5000
-        })
-      }
-    })
-    Instascan.Camera.getCameras()
-      .then(function (cameras) {
+      })
+      Instascan.Camera.getCameras().then(function (cameras) {
         $this.cameras = cameras
         $this.camerasOptions = cameras.map(cam => {
           return {
@@ -111,8 +117,7 @@ export default {
             duration: 5000
           })
         }
-      })
-      .catch(function (e) {
+      }).catch(function (e) {
         console.error(e)
         Toast({
           message: e,
@@ -120,6 +125,9 @@ export default {
           duration: 5000
         })
       })
+    }).catch(function (err) {
+      console.log(err)
+    })
   },
   methods: {
     formatName: function (name) {

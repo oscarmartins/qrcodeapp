@@ -31,7 +31,7 @@ export default new Router({
       component: Start
     },
     {
-      path: '/product',
+      path: '/product/:pid',
       name: 'product',
       component: Product
     },
